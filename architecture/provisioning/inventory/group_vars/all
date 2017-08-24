@@ -1,0 +1,97 @@
+#Vars for this Project
+drupal_project_name:       test
+drupal_install_date:
+drupal_crypt_key:
+deploy_release_path:        "../../build/dist/{{ drupal_project_name }}-{{ deploy_version }}.tar.gz"
+delivery_authorized_smile_users:
+  - abjih
+delivery_authorized_extra_keys: []
+
+#Vars for Drupal Skeleton
+drupal_delivery_path:      "/var/www/{{ drupal_project_name }}"
+drupal_project_path:       "{{ drupal_delivery_path }}"
+drupal_source_path:        "{{ drupal_project_path }}/src"
+drupal_hostname:           "www.{{ drupal_project_name }}.com"
+drupal_project_user:       smile
+drupal_project_group:      root
+drupal_webserver_user:     www-data
+drupal_webserver_group:    www-data
+drupal_mode:               "production"
+drupal_profiler:           Off
+drupal_profiler_type:      html
+drupal_php_display_errors: Off
+drupal_php_error_reporting: E_ALL
+drupal_admin_firstname:    "{{ drupal_project_name }}"
+drupal_admin_lastname:     "{{ drupal_project_name }}"
+drupal_admin_email:        "{{ drupal_project_name }}@smile.fr"
+drupal_admin_user:         admin
+drupal_admin_password:     sigipsr
+drupal_backend_frontname:  admin
+drupal_db_host:            mydb
+drupal_db_name:            "{{ drupal_project_name }}"
+drupal_db_table_prefix:
+drupal_db_user:            "{{ drupal_project_name }}"
+drupal_db_password:        "{{ drupal_project_name }}"
+drupal_use_rewrites:       1
+drupal_language:           en
+drupal_timezone:           Europe/Paris
+drupal_install_profile:    standard
+drupal_cronjob:            "cd {{ drupal_source_path }} && ../bin/drush cron >> /var/log/drupal.cron.log 2>&1"
+drupal_cron_log:           "/var/log/drupal_cron.log"
+drupal_trusted_host_patterns:
+  - "^{{ drupal_hostname }}$"
+drupal_sites:
+  - url: "{{ drupal_hostname }}"
+    folder: 'default'
+
+drupal_php_mode:               fpm
+
+drupal_cache_id_prefix:        "{{ drupal_project_name }}_"
+drupal_cache_host:             myredis
+drupal_cache_port:             6379
+drupal_cache_database:         1
+drupal_cache_session_host:     myredis
+drupal_cache_session_port:     6380
+drupal_cache_session_database: 1
+
+drupal_http_cache_hosts:
+  - host: myfront1
+    port: 80
+
+drupal_deploy_di_logs_path:             "/tmp/drupal_deploy_di.log"
+drupal_deploy_static_content_logs_path: "/tmp/drupal_deploy_static_content.log"
+drupal_maintenance_allowed_ips: []
+
+drupal_install_grunt:      false
+drupal_install_maildev:    false
+
+#Vars for delivery playbook
+deploy_shared_folders:
+  - src/sites/default/files
+
+deploy_shared_files:
+  - filename: src/sites/default/settings.php
+    template: settings.php.j2
+  - filename: src/sites/default/services.yml
+    template: services.yml.j2
+  - filename: src/sites/sites.php
+    template: sites.php.j2
+
+#For static content generation
+deploy_languages:
+    - en_US
+
+#Delivery user
+delivery_authorized_users: "{{ delivery_authorized_smile_users }}"
+deploy_keep_releases: 3
+
+#Hosts to prepare in the /etc/hosts file
+specific_hosts:
+  - myfront1
+  - mydb
+  - myredis
+  - myelasticsearch
+
+#Vars for ansible-basic-server
+extra_packages:
+  - curl

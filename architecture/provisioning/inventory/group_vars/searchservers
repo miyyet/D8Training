@@ -1,0 +1,17 @@
+#Vars for ansible-elasticsearch
+es_version:       "2.4.1"
+es_java_version:  8
+es_cluster_name:  "{{ drupal_project_name }}"
+es_logger_action: "WARN"
+
+es_config_other:
+  network.bind_host:  0
+  bootstrap.mlockall: "true"
+  script.inline:      "on"
+  script.indexed:     "on"
+
+es_plugins:
+  - "mobz/elasticsearch-head"
+  - "analysis-phonetic"
+  - "analysis-icu"
+  - "lmenezes/elasticsearch-kopf"

@@ -1,0 +1,7 @@
+---
+- hosts: webservers
+  vars:
+    ansible_user: "{{ drupal_project_user }}"
+
+  tasks:
+  - include: includes/cache-clean-tasks.yml

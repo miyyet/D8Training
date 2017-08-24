@@ -1,0 +1,11 @@
+---
+- hosts: webservers-main
+
+  vars:
+    ansible_user: "{{ drupal_project_user }}"
+
+  tasks:
+
+  - include: includes/permissions-tasks-light.yml
+
+  - include: includes/setup-upgrade-tasks.yml

@@ -1,0 +1,75 @@
+# On webservers-main for user {{ drupal_project_user }}
+- debug:
+    msg: "NOTICE : Drupal installation will be done now"
+
+# Init configuration files if needed
+- include: includes/init-file-from-drupal-template.yml
+  vars:
+    init_path: "{{ drupal_project_path }}"
+  with_items: "{{ deploy_shared_files|default([]) }}"
+
+# Security check for any case
+- block:
+  # Insure permissions for Drupal installation
+  - name: "Insure webserver user can write configuration in sites/default/settings.php file"
+    file:
+      path: "{{ drupal_source_path }}/sites/default/settings.php"
+      owner: "{{ drupal_project_user }}"
+      group: "{{ drupal_webserver_group }}"
+      follow: yes
+      mode: "g+w"
+
+  - name: "Insure webserver user can write configuration in sites/default/services.yml file"
+    file:
+      path: "{{ drupal_source_path }}/sites/default/services.yml"
+      owner: "{{ drupal_project_user }}"
+      group: "{{ drupal_webserver_group }}"
+      follow: yes
+      mode: "g+w"
+
+# Ensure the .cache_activated file is not present when rebuilding.
+- block:
+  - name: "Disable external cache"
+    file:
+      path: "{{ drupal_source_path }}/sites/default/.cache_activated"
+      state: absent
+
+  - name: "Install Drupal 8"
+    become: yes
+    become_method: sudo
+    become_user: "{{ drupal_webserver_user }}"
+    command: "{{ drupal_project_path }}/bin/drush site-install {{ drupal_install_profile }}
+    --account-name={{ drupal_admin_user }}
+    --account-pass={{ drupal_admin_password }}
+    --account-mail={{ drupal_admin_email }}
+    --db-url=mysql://{{ drupal_db_user }}:{{ drupal_db_password }}@{{ drupal_db_host }}/{{ drupal_db_name }}
+    --locale={{ drupal_language }}
+    --db-prefix={{ drupal_db_table_prefix }}
+    --site-name={{ drupal_project_name }}
+    --site-mail={{ drupal_admin_email }}
+    -y"
+    args:
+      chdir: "{{ drupal_source_path }}"
+
+# On webservers-main for user {{ drupal_project_user }}
+- name: "Check if Drupal console is installed"
+  stat:
+    path: "{{ drupal_project_path }}/bin/drupal"
+  register: drupal_console_path
+
+- block:
+    # Drupal Console Init
+    - name: "Check if Drupal console was already initialized"
+      stat:
+        path: ".console/drupal.fish"
+      register: drupal_console_init_path
+
+    - name: "Init Drupal Console"
+      command: "{{ drupal_project_path }}/bin/drupal init"
+      args:
+        chdir: "{{ drupal_source_path }}"
+      when: drupal_console_init_path.stat.exists == False
+  when: drupal_console_path.stat.exists == True
+
+- name: "Reset permissions"
+  include: permissions-tasks-light.yml

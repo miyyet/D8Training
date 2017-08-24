@@ -1,0 +1,12 @@
+- name: "Upgrade Drupal database"
+  become: yes
+  become_method: sudo
+  become_user: "{{ drupal_webserver_user }}"
+  command: "../bin/drush updatedb --entity-updates -y"
+  register: result_setup_drupal
+  args:
+    chdir: "{{ drupal_source_path }}"
+
+- name: "Upgrade Drupal Setup - result"
+  debug:
+    var: result_setup_drupal.stdout_lines

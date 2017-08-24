@@ -1,0 +1,9 @@
+
+smile_entity.feedback_form:
+  path: '/feedbacks'
+  defaults:
+    _form: '\Drupal\smile_entity\Form\FeedbackForm'
+    _title: 'FeedbackForm'
+  requirements:
+    _access: 'TRUE'
+  

@@ -1,0 +1,41 @@
+---
+- hosts: webservers-main
+
+  vars:
+    ansible_user: "{{ drupal_project_user }}"
+    manage_cron: "Y"
+    install_modules: "N"
+
+  tasks:
+  - name: "Disable Drupal 8 Cron"
+    become: yes
+    become_method: sudo
+    become_user: "{{ drupal_webserver_user }}"
+    cron:
+      name:   "Drupal Cron Run"
+      minute: "*/5"
+      hour:   "*"
+      job:    "{{ drupal_cronjob }}"
+      disabled: true
+    when: manage_cron|upper == "Y"
+    run_once: true
+
+  - name: "Install Drupal"
+    include: includes/drupal-install.yml
+    run_once: true
+
+  - name: "Install Drupal Modules"
+    include: includes/drupal-modules-install.yml
+    when: install_modules|upper == "Y"
+
+  - name: "Enable Drupal 8 Cron"
+    become: yes
+    become_method: sudo
+    become_user: "{{ drupal_webserver_user }}"
+    cron:
+      name:   "Drupal Cron Run"
+      minute: "*/5"
+      hour:   "*"
+      job:    "{{ drupal_cronjob }}"
+    when: manage_cron|upper == "Y"
+    run_once: true

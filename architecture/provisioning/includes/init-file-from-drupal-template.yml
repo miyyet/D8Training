@@ -1,0 +1,13 @@
+- name: "Check if {{ item.filename }} file already exists in the target folder"
+  stat:
+    path: "{{ init_path }}/{{ item.filename }}"
+  register: init_file
+
+- name: "Init {{ item.filename }} file in the {{ init_path }} folder"
+  template:
+    src:   "templates/drupal/{{ item.template }}"
+    dest:  "{{ init_path }}/{{ item.filename }}"
+    owner: "{{ drupal_project_user }}"
+    group: "{{ drupal_webserver_group }}"
+    mode:  "u=rw,g=rw,o=r"
+  when: not init_file.stat.exists

@@ -1,0 +1,5 @@
+entity.training_feedback_entity.add_form:
+  route_name: entity.training_feedback_entity.add_form
+  title: 'Add Training feedback entity'
+  appears_on:
+    - entity.training_feedback_entity.collection

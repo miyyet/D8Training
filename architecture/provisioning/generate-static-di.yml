@@ -1,0 +1,9 @@
+---
+- hosts: webservers
+
+  vars:
+    ansible_user: "{{ drupal_project_user }}"
+
+  tasks:
+
+  - include: includes/generate-static-di-tasks.yml

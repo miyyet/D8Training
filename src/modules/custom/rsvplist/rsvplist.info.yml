@@ -1,0 +1,6 @@
+name: rsvplist
+type: module
+description: My Awesome Module
+core: 8.x
+package: Custom
+configure: rsvplist.admin_settings

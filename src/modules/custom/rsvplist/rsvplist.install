@@ -1,0 +1,57 @@
+<?php
+
+function rsvplist_schema() {
+  $schema['rsvplist'] = [
+    'description' => 'Store emails',
+    'fields' => [
+      'id' => [
+        'type' => 'serial',
+        'unsigned' => true,
+        'not null' => true,
+        'description' => "Primary id",
+      ],
+      'uid' => [
+        'type' => 'int',
+        'not null' => true,
+        'default' => 0,
+        'description' => "{users}.uid that added this rsvp.",
+      ],
+      'nid' => [
+        'description' => '{node}.nid for this rsvp',
+        'type' => 'varchar',
+        'not null' => false,
+        'length' => 64,
+        'default' => 0,
+      ],
+      'mail' => [
+        'description' => 'User mail',
+        'type' => 'varchar',
+        'not null' => false,
+        'default' => '',
+        'length' => 64,
+      ],
+    ],
+    'primary key' => ['id'],
+    'indexes' => [
+      'node' => ['nid'],
+      'node_user' => ['nid', 'uid'],
+    ],
+  ];
+
+
+  $schema['rsvplist_enabled'] = [
+    'description' => 'Tracks whether rsvplist is enabled for a node',
+    'fields' => [
+      'nid' => [
+        'description' => '{node}.nid for this rsvp',
+        'type' => 'int',
+        'not null' => true,
+        'default' => 0,
+      ],
+    ],
+    'primary key' => ['nid'],
+  ];
+
+  return $schema;
+
+}

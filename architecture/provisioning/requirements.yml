@@ -1,0 +1,36 @@
+---
+- src: git@git.smile.fr:ansible/ansible-genericservice.git
+  scm: git
+
+- src: git@git.smile.fr:ansible/ansible-basicserver.git
+  scm: git
+
+- src: git@git.smile.fr:ansible/ansible-redis.git
+  scm: git
+
+- src: git@git.smile.fr:ansible/ansible-mysql-server.git
+  scm: git
+
+#- src: git@git.smile.fr:ansible/ansible-elasticsearch.git
+#  scm: git
+
+- src: git@git.smile.fr:ansible/ansible-nginx.git
+  scm: git
+
+- src: git@git.smile.fr:ansible/ansible-composer.git
+  scm: git
+
+- src: git@git.smile.fr:ansible/ansible-varnish.git
+  scm: git
+
+- src: git@git.smile.fr:ansible/ansible-apache.git
+  scm: git
+
+- src: git@git.smile.fr:ansible/ansible-php.git
+  scm: git
+
+- src: git@git.smile.fr:ansible/ansible-npm.git
+  scm: git
+
+- src: git@git.smile.fr:ansible/ansible-maildev.git
+  scm: git

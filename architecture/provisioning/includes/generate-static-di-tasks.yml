@@ -1,0 +1,15 @@
+#- name: "Generate static files"
+#  become: yes
+#  become_method: sudo
+#  become_user: "{{ drupal_webserver_user }}"
+#  shell: "bin/drupal setup:static-content:deploy --jobs 1 {{ deploy_languages | join(' ') }} >> {{drupal_deploy_static_content_logs_path}} 2>&1"
+#  args:
+#    chdir: "{{ drupal_source_path }}"
+#
+#- name: "Generate DI Configuration"
+#  become: yes
+#  become_method: sudo
+#  become_user: "{{ drupal_webserver_user }}"
+#  shell: "bin/drupal setup:di:compile >> {{drupal_deploy_di_logs_path}} 2>&1"
+#  args:
+#    chdir: "{{ drupal_source_path }}"

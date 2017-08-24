@@ -1,0 +1,10 @@
+view rsvplist:
+  title: 'View RSVP Form'
+  description: 'Allow access to my content'
+access rsvplist report:
+  title: 'Reposrt RSVP'
+  description: 'Allow access to my content'
+administer rsvplist:
+  title: 'Administer RSVP Form'
+  description: 'Allow access to my content'
+  restrict access: true

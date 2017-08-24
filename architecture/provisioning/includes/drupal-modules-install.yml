@@ -1,0 +1,49 @@
+- debug:
+    msg: "NOTICE : Drupal Contrib modules installation will be done now"
+
+# Get the Drupal contrib modules list
+- name: Get drupal not installed contrib modules list
+  become: yes
+  become_method: sudo
+  become_user: "{{ drupal_webserver_user }}"
+  # The following command extract the list of not installed modules from Drupal contrib modules
+  # and take only the folder name (name of meta module) to not enabled unwanted submodules as ctools_views for example.
+  # Note: the trailing grep is to blacklist some modules like the examples module, the head is to have
+  #       a 0 exit status even if grep fail when no module to install
+  # Note2: We use "bash -c" cos ansible use dash and not bash and <() is not allowed
+  shell: bash -c "comm -12  <(../bin/drush pm-list --no-core --status='not installed' --type=module --format=list | sort) <(ls -1 modules/contrib/ | sort) | grep -vP '(examples)' | head -n1000"
+  ignore_errors: yes
+  register: list_not_installed_modules
+  args:
+    chdir: "{{ drupal_source_path }}"
+
+# Install the modules
+- name: Install each drupal contrib module
+  become: yes
+  become_method: sudo
+  become_user: "{{ drupal_webserver_user }}"
+  shell: ../bin/drush en {{ item }} -y
+  with_items: "{{ list_not_installed_modules.stdout_lines|default([]) }}"
+  args:
+    chdir: "{{ drupal_source_path }}"
+  when: list_not_installed_modules is defined
+
+# Cache management
+- name: "Check if redis module is installed"
+  become: yes
+  become_method: sudo
+  become_user: "{{ drupal_webserver_user }}"
+  shell: ../bin/drush pm-info --fields=status --format=list redis
+  register: drupal_redis_module_status
+  args:
+    chdir: "{{ drupal_source_path }}"
+- block:
+  - name: "Activate external cache"
+    file:
+      path: "{{ drupal_source_path }}/sites/default/.cache_activated"
+      state: touch
+      owner: "{{ drupal_project_user }}"
+      group: "{{ drupal_webserver_group }}"
+      mode: "u=rw,g=rw"
+  - include: includes/cache-clean-tasks.yml
+  when: drupal_redis_module_status.stdout == 'enabled' and drupal_cache_host is defined and not drupal_cache_host|trim == ''

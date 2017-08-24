@@ -1,0 +1,56 @@
+- name: "Check if project root folder exists"
+  stat:
+    path: "{{ drupal_project_path }}"
+  register: project_path
+
+- name: "Check if Drupal root folder exists"
+  stat:
+    path: "{{ drupal_source_path }}"
+  register: drupal_path
+
+- name: "Set execution mode to scripts"
+  file:
+    path: "{{ item }}"
+    recurse: yes
+    state: directory
+    mode: "u+x,g+x"
+  with_items:
+    - "{{ drupal_project_path }}/bin"
+    - "{{ drupal_project_path }}/scripts"
+  when: project_path.stat.exists
+
+- name: "Fix permissions for {{ drupal_source_path }}/sites/*/files folders"
+  file:
+    path: "{{ drupal_source_path }}/sites/default/files"
+    owner: "{{ drupal_project_user }}"
+    group: "{{ drupal_webserver_group }}"
+    state: directory
+    recurse: yes
+    follow: yes
+    mode: "g+w"
+  when: drupal_path.stat.exists
+  failed_when: false
+
+- name: "Check if configurations files exists"
+  stat:
+    path: "{{ drupal_source_path }}/sites/default/settings.php"
+  register: settings_path
+  when: project_path.stat.exists
+
+- block:
+  - name: "Fix permissions for sites/default/settings.php file"
+    file:
+      path: "{{ drupal_source_path }}/sites/default/settings.php"
+      owner: "{{ drupal_project_user }}"
+      group: "{{ drupal_webserver_group }}"
+      follow: yes
+      mode: "go-w"
+
+  - name: "Fix permissions for sites/default/services.yml file"
+    file:
+      path: "{{ drupal_source_path }}/sites/default/services.yml"
+      owner: "{{ drupal_project_user }}"
+      group: "{{ drupal_webserver_group }}"
+      follow: yes
+      mode: "go-w"
+  when: project_path.stat.exists and settings_path.stat.exists

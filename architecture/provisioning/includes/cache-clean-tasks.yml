@@ -1,0 +1,7 @@
+  - name: "Rebuild Drupal cache"
+    become: yes
+    become_method: sudo
+    become_user: "{{ drupal_webserver_user }}"
+    command: "../bin/drush cr all"
+    args:
+      chdir: "{{ drupal_source_path }}"

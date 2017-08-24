@@ -1,0 +1,208 @@
+---
+- hosts: webservers
+  any_errors_fatal: true
+
+  vars:
+    ansible_user: "{{ drupal_project_user }}"
+    first_install: "N"
+    setup_upgrade: "N"
+    deploy_maintenance_mode_enabled: false
+
+  tasks:
+
+    # Check if version is provided
+    - name: "check 'deploy_version' var"
+      fail:
+        msg: "You must provide a 'deploy_version' variable in --extra-vars"
+      when: deploy_version is not defined
+      run_once: true
+
+    # Check the first_install parameter
+    - name: "check 'first_install' var"
+      fail:
+        msg: "The extra var 'first_install' accepts only Y or N as value"
+      when: first_install|upper != "Y" and first_install|upper != "N"
+      run_once: true
+
+    # Check the setup_upgrade parameter
+    - name: "check 'setup_upgrade' var"
+      fail:
+        msg: "The extra var 'setup_upgrade' accepts only Y or N as value"
+      when: setup_upgrade|upper != "Y" and setup_upgrade|upper != "N"
+      run_once: true
+
+    # Check the setup_upgrade parameter
+    - name: "check 'first_install' and 'setup_upgrade' consistency"
+      fail:
+        msg: "You can not set both 'first_install' and 'setup_upgrade' to Y"
+      when: first_install|upper == "Y" and setup_upgrade|upper == "Y"
+      run_once: true
+
+    - debug:
+        msg: "NOTICE : This is the first release. Drupal is not yet installed."
+      when: first_install|upper == "Y"
+      run_once: true
+
+    - debug:
+        msg: "NOTICE : Setup upgrade will be executed if needed. Drupal can be put in maintenance mode."
+      when: setup_upgrade|upper == "Y"
+      run_once: true
+
+    # Initialize release process
+    - name: "Initialize the deploy root and gather facts"
+      deploy_helper:
+        path: "{{ drupal_delivery_path }}"
+        release: "{{ deploy_version }}"
+
+    # Check release folder existance
+    - name: "Check if the release folder already exists"
+      stat:
+        path: "{{ deploy_helper.new_release_path }}"
+      register: release
+
+    - name: "Test if release folder already exist"
+      fail:
+        msg: "The release folder {{ deploy_helper.new_release_path }} already exists. Please provide another release or delete release folder."
+      when: release.stat.isdir is defined and release.stat.isdir
+
+    # Deploy from archive
+    - name: "Create the new release folder"
+      file:
+        path: "{{ deploy_helper.new_release_path }}"
+        state: directory
+
+    # Extract the archive
+    - name: "Extract the archive to the new release folder"
+      unarchive:
+        src: "{{ deploy_release_path }}"
+        dest: "{{ deploy_helper.new_release_path }}"
+
+    # Prepare the release
+    - name: "Add an unfinished file, to allow cleanup on successful finalize"
+      file:
+        path: "{{ deploy_helper.new_release_path }}/{{ deploy_helper.unfinished_filename }}"
+        state: touch
+
+    - block:
+      # Prepare shared folders
+      - include: includes/deploy-shared-folders-tasks.yml
+        with_items: "{{ deploy_shared_folders|default([]) }}"
+
+      # Prepare shared files
+      - include: includes/deploy-shared-file-tasks.yml
+        with_items: "{{ deploy_shared_files|default([]) }}"
+
+    # Update permissions
+    - include: includes/permissions-tasks-full.yml
+      vars:
+        drupal_project_path: "{{ deploy_helper.new_release_path }}"
+        drupal_source_path: "{{ deploy_helper.new_release_path }}/src"
+
+    # Check Drupal installation
+    - block:
+      - set_fact:
+          drupal_is_installed: false
+      - include: includes/check-drupal-installation.yml
+        when: first_install|upper != "Y"
+
+    # Check setup upgrade
+    - include: includes/check-setup-tasks.yml
+      vars:
+        drupal_source_path: "{{ deploy_helper.new_release_path }}/src"
+      run_once: true
+      delegate_to: "{{ groups['webservers-main'][0] }}"
+      when: first_install|upper == "N"
+
+    # Fails if setup mandatory and setup parameters to false
+    - name: "Test if setup upgrade is mandatory"
+      fail:
+        msg: "WARNING : Setup upgrade is mandatory."
+      when: first_install|upper == "N" and setup_upgrade|upper == "N" and setup_upgrade_required
+      run_once: true
+
+    # Warn if setup not mandatory and setup parameters to true
+    - debug:
+        msg: "WARNING : No setup to launch."
+      when: first_install|upper == "N" and setup_upgrade|upper == "Y" and not setup_upgrade_required
+      run_once: true
+
+    # Set maintenance flag
+    - block:
+      - set_fact:
+          deploy_maintenance_mode_enabled: true
+      - include: includes/set-maintenance-tasks.yml
+        vars:
+          maintenance_mode: "enable"
+          delivery_mode: true
+      when: first_install|upper == "N" and drupal_is_installed and setup_upgrade_required
+
+    # On webservers-main
+    - block:
+        # Disable Drupal 8 cron if we need to lauch setup upgrade
+        - name: "Disable Drupal 8 Cron"
+          become: yes
+          become_method: sudo
+          become_user: "{{ drupal_webserver_user }}"
+          cron:
+            name:   "Drupal Cron Run"
+            minute: "*/5"
+            hour:   "*"
+            job:    "{{ drupal_cronjob }}"
+            disabled: true
+
+        # Launch setup upgrade
+        - include: includes/setup-upgrade-tasks.yml
+          vars:
+            drupal_source_path: "{{ deploy_helper.new_release_path }}/src"
+
+      run_once: true
+      delegate_to: "{{ groups['webservers-main'][0] }}"
+      when: first_install|upper == "N" and setup_upgrade_required
+
+    # Generate static and di on production
+    - include: includes/generate-static-di-tasks.yml
+      vars:
+        drupal_source_path: "{{ deploy_helper.new_release_path }}/src"
+      when: first_install|upper == "N" and drupal_mode == "production"
+
+    # Activate the release
+    - name: "Removing the unfinished file"
+      file:
+        path: "{{ deploy_helper.new_release_path }}/{{ deploy_helper.unfinished_filename }}"
+        state: absent
+
+    - name: "Switching the symlink"
+      deploy_helper:
+        path: "{{ drupal_delivery_path }}"
+        release: "{{ deploy_helper.new_release }}"
+        state: finalize
+        keep_releases: "{{ deploy_keep_releases }}"
+
+    # Remove maintenance flag
+    - include: includes/set-maintenance-tasks.yml
+      vars:
+        maintenance_mode: "disable"
+        delivery_mode: true
+      when: deploy_maintenance_mode_enabled
+
+    # Clear the cache
+    - include: includes/cache-clean-tasks.yml
+      when: first_install|upper == "N"
+
+    # Warm up the cache
+    - include: includes/warm-up-cache.yml
+
+    # Enable cron only on the first webserver
+    - block:
+      # Reactivate Drupal 8 cron if previously disabled
+      - name: "Enable Drupal 8 cron"
+        become: yes
+        become_method: sudo
+        become_user: "{{ drupal_webserver_user }}"
+        cron:
+          name:   "Drupal Cron Run"
+          minute: "*/5"
+          hour:   "*"
+          job:    "{{ drupal_cronjob }}"
+      run_once: true
+      delegate_to: "{{ groups['webservers-main'][0] }}"

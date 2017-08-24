@@ -1,0 +1,32 @@
+- name: "Put site in maintenance"
+  become: yes
+  become_method: sudo
+  become_user: "{{ drupal_webserver_user }}"
+  command: "../bin/drush sset system.maintenance_mode 1 && ../bin/drush cr all"
+  args:
+    chdir: "{{ drupal_source_path }}"
+  when: maintenance_mode == "enable"
+
+#- name: "Enable ips to access site while maintenance"
+#  become: yes
+#  become_method: sudo
+#  become_user: "{{ drupal_webserver_user }}"
+#  command: "bin/drupal maintenance:allow-ips {{drupal_maintenance_allowed_ips | join (' ') }}"
+#  args:
+#    chdir: "{{ drupal_source_path }}"
+#  when: maintenance_mode == "enable" and not delivery_mode
+
+- name: "Disable maintenance"
+  become: yes
+  become_method: sudo
+  become_user: "{{ drupal_webserver_user }}"
+  command: "../bin/drush sset system.maintenance_mode 0 && ../bin/drush cr all"
+  args:
+    chdir: "{{ drupal_source_path }}"
+  when: maintenance_mode == "disable"
+
+#- name: "Disable ips to access site while maintenance"
+#  file:
+#    path: "{{ drupal_source_path }}/var/.maintenance.ip"
+#    state: absent
+#  when: maintenance_mode == "disable"

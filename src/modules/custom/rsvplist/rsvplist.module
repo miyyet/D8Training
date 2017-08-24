@@ -1,0 +1,68 @@
+<?php
+
+/**
+ * @file
+ * Contains rsvplist.module..
+ */
+
+use Drupal\Core\Routing\RouteMatchInterface;
+
+/**
+ * Implements hook_help().
+ */
+function rsvplist_help($route_name, RouteMatchInterface $route_match) {
+  switch ($route_name) {
+    // Main module help for the rsvplist module.
+    case 'help.page.rsvplist':
+      $output = '';
+      $output .= '<h3>' . t('About') . '</h3>';
+      $output .= '<p>' . t('My Awesome Module') . '</p>';
+      return $output;
+
+    default:
+  }
+}
+
+function rsvplist_form_node_form_alter(&$form, \Drupal\Core\Form\FormStateInterface $form_state, $form_id){
+
+  $node = $form_state->getFormObject()->getEntity();
+  $node_type = $node->getType();
+  $config = \Drupal::config('rsvplist.settings');
+  $types = $config->get('allowed_types', []);
+
+  if (in_array($node_type, $types)){
+    $form['rsvplist'] = [
+      '#type' => 'details',
+      '#title' => 'RSVP Collection',
+      '#access' => \Drupal::currentUser()->hasPermission('administer rsvplist'),
+      '#group' => 'advanced',
+      '#weight' => 100,
+    ];
+
+    $enablers = \Drupal::service('rsvplist.enabler');
+    $form['rsvplist']['rsvplist_enabled'] = [
+      '#type' => 'checkbox',
+      '#title' => 'Collect emails ?',
+      '#default_value' => $enablers->isEnabled($node)
+    ];
+
+    foreach(array_keys($form['actions']) as $action){
+      if ($action != 'preview' && isset($form['actions'][$action]['#type']) && $form['actions'][$action]['#type'] === 'submit'){
+        $form['actions'][$action]['#submit'][] = 'rsvplist_form_node_form_submit';
+      }
+    }
+  }
+}
+
+function rsvplist_form_node_form_submit(array $form, \Drupal\Core\Form\FormStateInterface $form_state){
+
+  $enablers = \Drupal::service('rsvplist.enabler');
+  $node = $form_state->getFormObject()->getEntity();
+
+  if ($form_state->getValue('rsvplist_enabled')){
+    $enablers->setEnabled($node);
+  }
+  else{
+    $enablers->delEnabled($node);
+  }
+}

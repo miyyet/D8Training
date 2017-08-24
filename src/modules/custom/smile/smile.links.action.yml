@@ -1,0 +1,5 @@
+smile_button_action:
+  route_name: block_content.type_add
+  title: 'Add custom block type'
+  appears_on:
+    - smile.default_controller_hello

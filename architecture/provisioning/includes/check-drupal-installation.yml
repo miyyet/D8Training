@@ -1,0 +1,24 @@
+# Check Drupal installation
+- set_fact:
+    drupal_is_installed: false
+
+- name: "Check if Drupal is installed"
+  become: yes
+  become_method: sudo
+  become_user: "{{ drupal_webserver_user }}"
+  shell: ../bin/drush status --fields=bootstrap | grep -o "Successful" | head
+  register: drupal_install
+  args:
+    chdir: "{{ drupal_source_path }}"
+
+- set_fact:
+    drupal_is_installed: true
+  when: "'Successful' in drupal_install.stdout"
+
+- debug:
+    msg: "Drupal is installed"
+  when: drupal_is_installed
+
+- debug:
+    msg: "Drupal is NOT installed"
+  when: not drupal_is_installed

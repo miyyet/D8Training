@@ -1,0 +1,15 @@
+- set_fact:
+    setup_upgrade_required: true
+
+- name: "Check Drupal setup"
+  become: yes
+  become_method: sudo
+  become_user: "{{ drupal_webserver_user }}"
+  shell: "../bin/drush updatedb-status"
+  args:
+    chdir: "{{ drupal_source_path }}"
+  register: drupal_setup
+
+- set_fact:
+    setup_upgrade_required: false
+  when: "'No database updates required' in drupal_setup.stderr"

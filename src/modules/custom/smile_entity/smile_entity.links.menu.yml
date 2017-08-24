@@ -1,0 +1,13 @@
+# Training feedback entity menu items definition
+entity.training_feedback_entity.collection:
+  title: 'Training feedback entity list'
+  route_name: entity.training_feedback_entity.collection
+  description: 'List Training feedback entity entities'
+  parent: system.admin_structure
+  weight: 100
+
+training_feedback_entity.admin.structure.settings:
+  title: Training feedback entity settings
+  description: 'Configure Training feedback entity entities'
+  route_name: training_feedback_entity.settings
+  parent: system.admin_structure

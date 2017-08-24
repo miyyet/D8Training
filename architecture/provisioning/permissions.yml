@@ -1,0 +1,8 @@
+---
+- hosts: webservers
+
+  vars:
+    ansible_user: "root"
+
+  tasks:
+    - include: includes/permissions-tasks-full.yml

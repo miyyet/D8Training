@@ -1,0 +1,21 @@
+# Create the shared folders
+- name: "Create some folders in the shared folder"
+  file:
+    path: "{{ deploy_helper.shared_path }}/{{ item }}"
+    owner: "{{ drupal_project_user }}"
+    group: "{{ drupal_webserver_group }}"
+    state: directory
+    mode: "u=rwX,g=rwX,o=rX"
+
+# Remove the shared folders from the release folder and add symlink
+- name: "Remove shared directories in the release folder"
+  file:
+    path: "{{ deploy_helper.new_release_path }}/{{ item }}"
+    state: absent
+
+# Add the symlinks
+- name: "Add symlinks from the new release to the shared folder"
+  file:
+    src: "{{ deploy_helper.shared_path }}/{{ item }}"
+    dest: "{{ deploy_helper.new_release_path }}/{{ item }}"
+    state: link

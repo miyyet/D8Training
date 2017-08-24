@@ -1,0 +1,39 @@
+<?php
+
+/**
+ * @file
+ * Contains smile.module..
+ */
+
+use Drupal\Core\Routing\RouteMatchInterface;
+
+/**
+ * Implements hook_help().
+ */
+function smile_help($route_name, RouteMatchInterface $route_match) {
+  switch ($route_name) {
+    // Main module help for the smile module.
+    case 'help.page.smile':
+      $output = '';
+      $output .= '<h3>' . t('About') . '</h3>';
+      $output .= '<p>' . t('My Awesome Module') . '</p>';
+      return $output;
+
+    default:
+  }
+}
+
+/**
+ * Theme hook
+ */
+function smile_theme($existing, $type, $theme, $path) {
+  return [
+    'training_block' =>
+      [
+        'variables' => [
+          'nodes' => [],
+        ],
+        'template' => 'block--training',
+      ],
+  ];
+}

@@ -1,0 +1,8 @@
+
+smile.default_controller_hello:
+  path: '/training/route/{myparam}'
+  defaults:
+    _controller: '\Drupal\smile\Controller\DefaultController::hello'
+    _title: 'Hello world'
+  requirements:
+    _permission: 'access content'
